@@ -40,8 +40,8 @@ func (c *Client) Close() {
 }
 
 func (c *Client) Listen() {
-	go c.listenWrite()
-	c.listenRead()
+	go c.onWrite()
+	c.onRead()
 }
 
 func (c *Client) Write(msg string) {
@@ -55,13 +55,13 @@ func (c *Client) Write(msg string) {
 	}
 }
 
-func (c *Client) listenWrite() {
+func (c *Client) onWrite() {
 	for {
 		select {
 		case <-c.doneChan:
 			c.server.RemoveClient(c)
 
-			// For listenRead method
+			// For onRead method
 			c.doneChan <- true
 			return
 		case msg := <-c.msgChan:
@@ -74,7 +74,7 @@ func (c *Client) listenWrite() {
 	}
 }
 
-func (c *Client) listenRead() {
+func (c *Client) onRead() {
 	var bytesRead int
 	var err error
 	data := make([]byte, 1024)
@@ -84,7 +84,7 @@ func (c *Client) listenRead() {
 		case <-c.doneChan:
 			c.server.RemoveClient(c)
 
-			// For listenWrite method
+			// For onWrite method
 			c.doneChan <- true
 			return
 		default:
