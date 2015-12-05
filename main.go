@@ -10,10 +10,11 @@ import (
 func main() {
 	log.Println("Starting server at port...")
 
-	s := &Server{}
+	s := NewServer()
 
-	http.Handle("/echo", websocket.Handler(s.EchoHandler))
+	http.Handle("/echo", websocket.Handler(s.OnConnect))
 
+	go s.Listen()
 	err := http.ListenAndServe(":2222", nil)
 
 	if err != nil {
