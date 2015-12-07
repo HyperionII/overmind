@@ -14,6 +14,7 @@ func main() {
 
 	http.Handle("/echo", websocket.Handler(s.OnConnect))
 
+	log.Println("Listening...")
 	go s.Listen()
 	err := http.ListenAndServe(":2222", nil)
 
