@@ -1,0 +1,8 @@
+{
+	"ImportPath": "github.com/hyperionii/overmind",
+	"GoVersion": "go1.5.2",
+	"Packages": [
+		"./..."
+	],
+	"Deps": []
+}
