@@ -1,8 +1,10 @@
 {
 	"ImportPath": "github.com/hyperionii/overmind",
 	"GoVersion": "go1.5.2",
-	"Packages": [
-		"./..."
-	],
-	"Deps": []
+	"Deps": [
+		{
+			"ImportPath": "github.com/gorilla/websocket",
+			"Rev": "361d4c0ffd78338ebe0a9e6320cdbe115d7dc026"
+		}
+	]
 }
