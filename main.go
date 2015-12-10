@@ -3,8 +3,6 @@ package main
 import (
 	"log"
 	"net/http"
-
-	"golang.org/x/net/websocket"
 )
 
 func main() {
@@ -12,7 +10,7 @@ func main() {
 
 	s := NewServer()
 
-	http.Handle("/echo", websocket.Handler(s.OnConnect))
+	http.HandleFunc("/echo", s.OnConnect)
 
 	log.Println("Listening...")
 	go s.Listen()
