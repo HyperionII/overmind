@@ -5,7 +5,7 @@ import (
 	"io"
 	"strconv"
 
-	"golang.org/x/net/websocket"
+	"github.com/gorilla/websocket"
 )
 
 var (
@@ -16,19 +16,19 @@ type Client struct {
 	Id   int
 	Name string
 
-	ws       *websocket.Conn
+	conn     *websocket.Conn
 	server   *Server
 	msgChan  chan string
 	doneChan chan bool
 }
 
-func NewClient(ws *websocket.Conn, server *Server) *Client {
+func NewClient(conn *websocket.Conn, server *Server) *Client {
 	maxClientId++
 
 	return &Client{
 		Id:       maxClientId,
 		Name:     "Client" + strconv.Itoa(maxClientId),
-		ws:       ws,
+		conn:     conn,
 		server:   server,
 		msgChan:  make(chan string),
 		doneChan: make(chan bool),
@@ -65,7 +65,7 @@ func (c *Client) onWrite() {
 			c.doneChan <- true
 			return
 		case msg := <-c.msgChan:
-			_, err := c.ws.Write([]byte(msg))
+			err := c.conn.WriteMessage(websocket.TextMessage, []byte(msg))
 
 			if err != nil {
 				c.server.errorChan <- err
@@ -75,10 +75,6 @@ func (c *Client) onWrite() {
 }
 
 func (c *Client) onRead() {
-	var bytesRead int
-	var err error
-	data := make([]byte, 1024)
-
 	for {
 		select {
 		case <-c.doneChan:
@@ -88,9 +84,11 @@ func (c *Client) onRead() {
 			c.doneChan <- true
 			return
 		default:
-			bytesRead, err = c.ws.Read(data)
+			messageType, data, err := c.conn.ReadMessage()
+			fmt.Println("Received message with type", messageType)
 
 			if err == io.EOF {
+				fmt.Println("EOF found :D")
 				c.doneChan <- true
 				continue
 			} else if err != nil {
@@ -98,7 +96,7 @@ func (c *Client) onRead() {
 				continue
 			}
 
-			msg := string(data[:bytesRead])
+			msg := string(data)
 			c.server.BroadcastMessage(msg)
 		}
 	}
