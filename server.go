@@ -2,8 +2,9 @@ package main
 
 import (
 	"log"
+	"net/http"
 
-	"golang.org/x/net/websocket"
+	"github.com/gorilla/websocket"
 )
 
 type Server struct {
@@ -13,16 +14,22 @@ type Server struct {
 	removeClientChan chan *Client
 	errorChan        chan error
 	broadcastChannel chan string
+	upgrader         websocket.Upgrader
 }
 
-func NewServer() *Server {
-	return &Server{
+func NewServer() Server {
+	return Server{
 		messages:         []string{},
 		clients:          make(map[int]*Client),
 		addClientChan:    make(chan *Client),
 		removeClientChan: make(chan *Client),
 		errorChan:        make(chan error),
 		broadcastChannel: make(chan string),
+
+		upgrader: websocket.Upgrader{
+			ReadBufferSize:  1024,
+			WriteBufferSize: 1024,
+		},
 	}
 }
 
@@ -38,13 +45,35 @@ func (s *Server) BroadcastMessage(message string) {
 	s.broadcastChannel <- message
 }
 
-func (s *Server) OnConnect(ws *websocket.Conn) {
-	client := NewClient(ws, s)
+func (s *Server) PingHandler(appData string) error {
+	log.Println("> Ping handler:", appData)
+
+	return nil
+}
+
+func (s *Server) PongHandler(appData string) error {
+	log.Println("> Pong handler:", appData)
+
+	return nil
+}
+
+func (s *Server) OnConnect(w http.ResponseWriter, r *http.Request) {
+	conn, err := s.upgrader.Upgrade(w, r, nil)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	conn.SetPingHandler(s.PingHandler)
+	conn.SetPongHandler(s.PongHandler)
+
+	client := NewClient(conn, s)
 
 	s.AddClient(client)
 	client.Listen()
 
-	if err := ws.Close(); err != nil {
+	if err := conn.Close(); err != nil {
 		log.Println(err)
 	}
 }
