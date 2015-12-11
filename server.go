@@ -17,8 +17,8 @@ type Server struct {
 	upgrader         websocket.Upgrader
 }
 
-func NewServer() Server {
-	return Server{
+func NewServer() *Server {
+	return &Server{
 		messages:         []string{},
 		clients:          make(map[int]*Client),
 		addClientChan:    make(chan *Client),
