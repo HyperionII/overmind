@@ -45,18 +45,6 @@ func (s *Server) BroadcastMessage(message string) {
 	s.broadcastChannel <- message
 }
 
-func (s *Server) PingHandler(appData string) error {
-	log.Println("> Ping handler:", appData)
-
-	return nil
-}
-
-func (s *Server) PongHandler(appData string) error {
-	log.Println("> Pong handler:", appData)
-
-	return nil
-}
-
 func (s *Server) OnConnect(w http.ResponseWriter, r *http.Request) {
 	conn, err := s.upgrader.Upgrade(w, r, nil)
 
@@ -64,9 +52,6 @@ func (s *Server) OnConnect(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-
-	conn.SetPingHandler(s.PingHandler)
-	conn.SetPongHandler(s.PongHandler)
 
 	client := NewClient(conn, s)
 
