@@ -68,24 +68,36 @@ func (s *Server) Listen() {
 		select {
 
 		case client := <-s.addClientChan:
-			s.clients[client.Id] = client
-
-			log.Println(client.Name, "has joined the channel!")
-			log.Println("Currently", len(s.clients), "clients connected!")
+			s.addClient(c)
 
 		case client := <-s.removeClientChan:
-			delete(s.clients, client.Id)
-
-			log.Println(client.Name, "has left the channel!")
-			log.Println("Currently", len(s.clients), "clients connected!")
+			s.removeClient(c)
 
 		case msg := <-s.broadcastChannel:
-			for _, client := range s.clients {
-				client.Write(msg)
-			}
+			s.broadcastMessage(msg)
 
 		case err := <-s.errorChan:
 			log.Println("error:", err.Error())
 		}
+	}
+}
+
+func (s *Server) addClient(c *Client) {
+	s.clients[client.Id] = client
+
+	log.Println(client.Name, "has joined the channel!")
+	log.Println("Currently", len(s.clients), "clients connected!")
+}
+
+func (s *Server) removeClient(c *Client) {
+	delete(s.clients, client.Id)
+
+	log.Println(client.Name, "has left the channel!")
+	log.Println("Currently", len(s.clients), "clients connected!")
+}
+
+func (s *Server) broadcastMessage(message string) {
+	for _, client := range s.clients {
+		client.Write(message)
 	}
 }
