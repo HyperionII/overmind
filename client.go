@@ -50,7 +50,7 @@ func (c *Client) Write(msg string) {
 
 	default:
 		c.server.RemoveClient(c)
-		err := fmt.Errorf("client is disconnected: attempt to send message to client [%d] failed", c.Id)
+		err := fmt.Errorf("attempt to send message to client [%d] failed: client is disconnected: ", c.Id)
 		c.server.errorChan <- err
 	}
 }
