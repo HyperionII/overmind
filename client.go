@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"log"
 	"strconv"
 
 	"github.com/gorilla/websocket"
@@ -47,16 +48,19 @@ func (c *Client) Listen() {
 func (c *Client) Write(msg string) {
 	select {
 	case c.msgChan <- msg:
+		log.Println("Client::Write->", msg)
 
 	default:
 		c.server.RemoveClient(c)
 		err := fmt.Errorf("attempt to send message to client [%d] failed: client is disconnected: ", c.Id)
-		c.server.errorChan <- err
+		log.Println(err)
 	}
 }
 
 func (c *Client) onWrite() {
 	for {
+		log.Println("Client::Write -> Waiting for event...")
+
 		select {
 		case <-c.doneChan:
 			c.server.RemoveClient(c)
@@ -65,12 +69,19 @@ func (c *Client) onWrite() {
 			c.doneChan <- true
 			return
 		case msg := <-c.msgChan:
+			log.Println("Client chan received message:", msg)
+
 			err := c.conn.WriteMessage(websocket.TextMessage, []byte(msg))
 
 			if err != nil {
+				log.Println(err)
 				c.server.errorChan <- err
 			}
+
+			log.Println("Message sent!")
 		}
+
+		log.Println("Client::Write -> Event served!")
 	}
 }
 
@@ -85,10 +96,10 @@ func (c *Client) onRead() {
 			return
 		default:
 			messageType, data, err := c.conn.ReadMessage()
-			fmt.Println("Received message with type", messageType)
+			log.Println("Received message with type", messageType)
 
 			if err == io.EOF {
-				fmt.Println("EOF found :D")
+				log.Println("EOF found :D")
 				c.doneChan <- true
 				continue
 			} else if err != nil {

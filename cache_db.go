@@ -12,9 +12,11 @@ type RedisClient struct {
 
 func NewRedisClient() *RedisClient {
 	return &RedisClient{
-		Addr:     "localhost:6379",
-		Password: "",
-		DB:       0,
+		client: redis.NewClient(&redis.Options{
+			Addr:     "localhost:6379",
+			Password: "",
+			DB:       0,
+		}),
 	}
 }
 
@@ -29,5 +31,9 @@ func (c *RedisClient) GetAllMessages(channel string) ([]string, error) {
 	// Key should be in the format of channelName:messages
 	key := fmt.Sprintf("%s:messages", channel)
 
-	return c.client.LRange(key, 0, -1)
+	return c.client.LRange(key, 0, -1).Result()
+}
+
+func (c *RedisClient) Ping() error {
+	return c.client.Ping().Err()
 }

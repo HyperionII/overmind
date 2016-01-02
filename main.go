@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	log.Println("Starting server at port...")
+	log.Println("Starting server at port 2222...")
 
 	s := NewServer()
 
