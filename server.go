@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -13,7 +14,7 @@ type Server struct {
 	addClientChan    chan *Client
 	removeClientChan chan *Client
 	errorChan        chan error
-	broadcastChannel chan string
+	broadcastChannel chan []byte
 	upgrader         websocket.Upgrader
 	cacheClient      *RedisClient
 }
@@ -32,7 +33,7 @@ func NewServer() *Server {
 		addClientChan:    make(chan *Client),
 		removeClientChan: make(chan *Client),
 		errorChan:        make(chan error),
-		broadcastChannel: make(chan string),
+		broadcastChannel: make(chan []byte),
 		cacheClient:      NewRedisClient(),
 
 		upgrader: websocket.Upgrader{
@@ -50,7 +51,7 @@ func (s *Server) RemoveClient(client *Client) {
 	s.removeClientChan <- client
 }
 
-func (s *Server) BroadcastMessage(message string) {
+func (s *Server) BroadcastMessage(message []byte) {
 	s.broadcastChannel <- message
 }
 
@@ -75,19 +76,18 @@ func (s *Server) OnConnect(w http.ResponseWriter, r *http.Request) {
 func (s *Server) Listen() {
 	for {
 		select {
-
 		case client := <-s.addClientChan:
 			s.addClient(client)
-			go s.sendAllCachedMessages(client, "defaultChannel")
+			s.sendAllCachedMessages(client, "defaultChannel")
 
 		case client := <-s.removeClientChan:
 			s.removeClient(client)
 
 		case msg := <-s.broadcastChannel:
-			go s.broadcastMessage(msg)
+			s.broadcastMessage(msg)
 
 		case err := <-s.errorChan:
-			log.Println("error:", err.Error())
+			log.Println("server error channel:", err.Error())
 		}
 	}
 }
@@ -106,30 +106,30 @@ func (s *Server) removeClient(client *Client) {
 	log.Println("Currently", len(s.clients), "clients connected!")
 }
 
-func (s *Server) broadcastMessage(message string) {
-
-	err := s.cacheClient.SaveMessage("defaultChannel", msg)
-
-	if err != nil {
-
-	}
+func (s *Server) broadcastMessage(message []byte) {
 	for _, client := range s.clients {
 		client.Write(message)
 	}
+
+	s.cacheClient.SaveMessage("defaultChannel", string(message))
 }
 
 func (s *Server) sendAllCachedMessages(client *Client, channel string) {
 	messages, err := s.cacheClient.GetAllMessages(channel)
 
 	if err != nil {
-		s.errorChan <- err
+		log.Println("send all cached messages:", err)
 		return
 	}
 
 	for _, message := range messages {
-		log.Println("Server::sendAllCachedMessages -> Sending message:", message)
-		client.Write(message)
-	}
+		select {
+		case client.msgChan <- []byte(message):
 
-	log.Println("Server::sendAllCachedMessages -> All messages were sent!")
+		case <-time.After(10 * time.Second):
+			close(client.msgChan)
+			delete(s.clients, client.Id)
+			return
+		}
+	}
 }
