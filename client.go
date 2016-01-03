@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -13,31 +13,43 @@ var (
 	maxClientId = 0
 )
 
+const (
+	// Time allowed to write a message to the peer.
+	writeWait = 10 * time.Second
+
+	// Time allowed to read the next pong message from the peer.
+	pongWait = 60 * time.Second
+
+	// Send pings to peer with this period. Must be less than pongWait.
+	pingPeriod = (pongWait * 9) / 10
+
+	// Maximum message size allowed from peer.
+	maxMessageSize = 512
+)
+
 type Client struct {
 	Id   int
 	Name string
 
-	conn     *websocket.Conn
-	server   *Server
-	msgChan  chan string
-	doneChan chan bool
+	conn    *websocket.Conn
+	server  *Server
+	msgChan chan []byte
 }
 
 func NewClient(conn *websocket.Conn, server *Server) *Client {
 	maxClientId++
 
 	return &Client{
-		Id:       maxClientId,
-		Name:     "Client" + strconv.Itoa(maxClientId),
-		conn:     conn,
-		server:   server,
-		msgChan:  make(chan string),
-		doneChan: make(chan bool),
+		Id:      maxClientId,
+		Name:    "Client" + strconv.Itoa(maxClientId),
+		conn:    conn,
+		server:  server,
+		msgChan: make(chan []byte, 256),
 	}
 }
 
 func (c *Client) Close() {
-	c.doneChan <- true
+	close(c.msgChan)
 }
 
 func (c *Client) Listen() {
@@ -45,70 +57,74 @@ func (c *Client) Listen() {
 	c.onRead()
 }
 
-func (c *Client) Write(msg string) {
+func (c *Client) Write(msg []byte) {
 	select {
 	case c.msgChan <- msg:
-		log.Println("Client::Write->", msg)
-
-	default:
-		c.server.RemoveClient(c)
-		err := fmt.Errorf("attempt to send message to client [%d] failed: client is disconnected: ", c.Id)
-		log.Println(err)
+	case <-time.After(writeWait):
+		close(c.msgChan)
+		delete(c.server.clients, c.Id)
 	}
 }
 
+func (c *Client) write(messageType int, msg []byte) error {
+	c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+	return c.conn.WriteMessage(messageType, msg)
+}
+
 func (c *Client) onWrite() {
+	ticker := time.NewTicker(pingPeriod)
+	defer func() {
+		log.Println("Closing client", c.Id, "")
+		ticker.Stop()
+		c.conn.Close()
+	}()
+
 	for {
-		log.Println("Client::Write -> Waiting for event...")
-
 		select {
-		case <-c.doneChan:
-			c.server.RemoveClient(c)
-
-			// For onRead method
-			c.doneChan <- true
-			return
-		case msg := <-c.msgChan:
-			log.Println("Client chan received message:", msg)
-
-			err := c.conn.WriteMessage(websocket.TextMessage, []byte(msg))
-
-			if err != nil {
-				log.Println(err)
-				c.server.errorChan <- err
+		case msg, ok := <-c.msgChan:
+			if !ok {
+				c.write(websocket.CloseMessage, []byte{})
+				return
 			}
 
-			log.Println("Message sent!")
-		}
+			err := c.write(websocket.TextMessage, []byte(msg))
 
-		log.Println("Client::Write -> Event served!")
+			if err != nil {
+				c.server.errorChan <- err
+				return
+			}
+
+		case <-ticker.C:
+			err := c.write(websocket.PingMessage, []byte{})
+
+			if err != nil {
+				c.server.errorChan <- fmt.Errorf("client[%d] ping timeout: %s", c.Id, err.Error())
+				return
+			}
+		}
 	}
 }
 
 func (c *Client) onRead() {
+	defer func() {
+		c.server.removeClient(c)
+		c.conn.Close()
+	}()
+
+	c.conn.SetReadLimit(maxMessageSize)
+	c.conn.SetReadDeadline(time.Now().Add(pongWait))
+	c.conn.SetPongHandler(func(string) error {
+		c.conn.SetReadDeadline(time.Now().Add(pongWait))
+		return nil
+	})
+
 	for {
-		select {
-		case <-c.doneChan:
-			c.server.RemoveClient(c)
+		_, message, err := c.conn.ReadMessage()
 
-			// For onWrite method
-			c.doneChan <- true
-			return
-		default:
-			messageType, data, err := c.conn.ReadMessage()
-			log.Println("Received message with type", messageType)
-
-			if err == io.EOF {
-				log.Println("EOF found :D")
-				c.doneChan <- true
-				continue
-			} else if err != nil {
-				c.server.errorChan <- err
-				continue
-			}
-
-			msg := string(data)
-			c.server.BroadcastMessage(msg)
+		if err != nil {
+			break
 		}
+
+		c.server.BroadcastMessage(message)
 	}
 }
