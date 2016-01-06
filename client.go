@@ -41,11 +41,12 @@ func NewClient(conn *websocket.Conn, server *Server) *Client {
 	maxClientId++
 
 	return &Client{
-		Id:     maxClientId,
-		Name:   "Client" + strconv.Itoa(maxClientId),
-		conn:   conn,
-		server: server,
-		msgCh:  make(chan []byte, 256),
+		Id:      maxClientId,
+		Name:    "Client" + strconv.Itoa(maxClientId),
+		conn:    conn,
+		server:  server,
+		msgCh:   make(chan []byte, 256),
+		closeCh: make(chan bool, 1),
 	}
 }
 
