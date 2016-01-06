@@ -124,10 +124,10 @@ func (s *Server) sendAllCachedMessages(client *Client, channel string) {
 
 	for _, message := range messages {
 		select {
-		case client.msgChan <- []byte(message):
+		case client.msgCh <- []byte(message):
 
 		case <-time.After(10 * time.Second):
-			close(client.msgChan)
+			close(client.msgCh)
 			delete(s.clients, client.Id)
 			return
 		}
