@@ -33,23 +33,24 @@ type Client struct {
 
 	conn    *websocket.Conn
 	server  *Server
-	msgChan chan []byte
+	msgCh   chan []byte
+	closeCh chan bool
 }
 
 func NewClient(conn *websocket.Conn, server *Server) *Client {
 	maxClientId++
 
 	return &Client{
-		Id:      maxClientId,
-		Name:    "Client" + strconv.Itoa(maxClientId),
-		conn:    conn,
-		server:  server,
-		msgChan: make(chan []byte, 256),
+		Id:     maxClientId,
+		Name:   "Client" + strconv.Itoa(maxClientId),
+		conn:   conn,
+		server: server,
+		msgCh:  make(chan []byte, 256),
 	}
 }
 
 func (c *Client) Close() {
-	close(c.msgChan)
+	close(c.msgCh)
 }
 
 func (c *Client) Listen() {
@@ -59,9 +60,9 @@ func (c *Client) Listen() {
 
 func (c *Client) Write(msg []byte) {
 	select {
-	case c.msgChan <- msg:
+	case c.msgCh <- msg:
 	case <-time.After(writeWait):
-		close(c.msgChan)
+		close(c.msgCh)
 		delete(c.server.clients, c.Id)
 	}
 }
@@ -81,7 +82,7 @@ func (c *Client) onWrite() {
 
 	for {
 		select {
-		case msg, ok := <-c.msgChan:
+		case msg, ok := <-c.msgCh:
 			if !ok {
 				c.write(websocket.CloseMessage, []byte{})
 				return
