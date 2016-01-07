@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -122,7 +121,5 @@ func (s *Server) sendAllCachedMessages(client *Client, channel string) {
 		return
 	}
 
-	for _, message := range messages {
-		go client.Write(msg)
-	}
+	go client.WriteMany(messages)
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 	"time"
 
@@ -68,6 +67,12 @@ func (c *Client) Write(msg []byte) {
 	}
 }
 
+func (c *Client) WriteMany(msgs []string) {
+	for _, msg := range msgs {
+		c.Write([]byte(msg))
+	}
+}
+
 func (c *Client) write(messageType int, msg []byte) error {
 	c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 	return c.conn.WriteMessage(messageType, msg)
@@ -82,12 +87,8 @@ func (c *Client) onWrite() {
 
 	for {
 		select {
-		case msg, ok := <-c.msgCh:
-			if !ok {
-
-			}
-
-			err := c.write(websocket.TextMessage, []byte(msg))
+		case msg := <-c.msgCh:
+			err := c.write(websocket.TextMessage, msg)
 
 			if err != nil {
 				c.server.errorChan <- err
