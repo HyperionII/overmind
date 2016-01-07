@@ -58,19 +58,39 @@ func (c *Client) Listen() {
 	c.onRead()
 }
 
-func (c *Client) Write(msg []byte) {
+func (c *Client) Write(msg []byte) bool {
 	select {
 	case c.msgCh <- msg:
+		// Message successfully sent.
+		return true
 
 	case <-time.After(writeWait):
-		c.closeCh <- true
+		// If client queue is full and timed out, then send a close channel
+		// signal.
+		select {
+		case c.closeCh <- true:
+			// Close signal sent successfully.
+		default:
+			// If close signal can't be sent, it means there's already
+			// one signal in queue already. Ignore send.
+		}
+
+		return false
 	}
 }
 
-func (c *Client) WriteMany(msgs []string) {
+func (c *Client) WriteMany(msgs []string) bool {
+	var ok bool
+
 	for _, msg := range msgs {
-		c.Write([]byte(msg))
+		ok = c.Write([]byte(msg))
+
+		if !ok {
+			return false
+		}
 	}
+
+	return true
 }
 
 func (c *Client) write(messageType int, msg []byte) error {
