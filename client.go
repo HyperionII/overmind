@@ -103,7 +103,7 @@ func (c *Client) onWrite() {
 			}
 		case <-c.closeCh:
 			c.write(websocket.CloseMessage, []byte{})
-			c.closeCh <- true // Close onRead goroutine.
+			c.closeCh <- true // End onRead() goroutine.
 			return
 		}
 	}
@@ -125,7 +125,7 @@ func (c *Client) onRead() {
 	for {
 		select {
 		case <-c.closeCh:
-			c.closeCh <- true // End onWrite goroutine.
+			c.closeCh <- true // End onWrite() goroutine.
 			return
 		default:
 			_, message, err := c.conn.ReadMessage()
