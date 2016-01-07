@@ -63,8 +63,7 @@ func (c *Client) Write(msg []byte) {
 	select {
 	case c.msgCh <- msg:
 	case <-time.After(writeWait):
-		close(c.msgCh)
-		delete(c.server.clients, c.Id)
+		c.closeCh <- true
 	}
 }
 
@@ -103,6 +102,9 @@ func (c *Client) onWrite() {
 				c.server.errorChan <- fmt.Errorf("client[%d] ping timeout: %s", c.Id, err.Error())
 				return
 			}
+		case <-c.closeCh:
+			c.closeCh <- true // Close onRead goroutine.
+			return
 		}
 	}
 }
@@ -121,12 +123,18 @@ func (c *Client) onRead() {
 	})
 
 	for {
-		_, message, err := c.conn.ReadMessage()
+		select {
+		case <-c.closeCh:
+			c.closeCh <- true // End onWrite goroutine.
+			return
+		default:
+			_, message, err := c.conn.ReadMessage()
 
-		if err != nil {
-			break
+			if err != nil {
+				return
+			}
+
+			c.server.BroadcastMessage(message)
 		}
-
-		c.server.BroadcastMessage(message)
 	}
 }
