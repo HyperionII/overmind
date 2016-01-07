@@ -123,13 +123,6 @@ func (s *Server) sendAllCachedMessages(client *Client, channel string) {
 	}
 
 	for _, message := range messages {
-		select {
-		case client.msgCh <- []byte(message):
-
-		case <-time.After(10 * time.Second):
-			close(client.msgCh)
-			delete(s.clients, client.Id)
-			return
-		}
+		go client.Write(msg)
 	}
 }
