@@ -113,7 +113,7 @@ func (c *Client) onWrite() {
 			err := c.write(websocket.TextMessage, msg)
 
 			if err != nil {
-				c.server.errorChan <- err
+				c.server.LogError(err)
 				return
 			}
 
@@ -121,7 +121,8 @@ func (c *Client) onWrite() {
 			err := c.write(websocket.PingMessage, []byte{})
 
 			if err != nil {
-				c.server.errorChan <- fmt.Errorf("client[%d] ping timeout: %s", c.Id, err.Error())
+				err = fmt.Errorf("client[%d] ping timeout: %s", c.Id, err.Error())
+				c.server.LogError(err)
 				return
 			}
 
