@@ -108,7 +108,7 @@ func (s *Server) removeClient(client *Client) {
 
 func (s *Server) broadcastMessage(message []byte) {
 	for _, client := range s.clients {
-		client.Write(message)
+		go client.Write(message)
 	}
 
 	s.cacheClient.SaveMessage("defaultChannel", string(message))
