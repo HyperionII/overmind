@@ -10,9 +10,9 @@ import (
 type Server struct {
 	messages         []string
 	clients          map[int]*Client
-	addClientChan    chan *Client
-	removeClientChan chan *Client
-	errorChan        chan error
+	addClientCh      chan *Client
+	removeClientCh   chan *Client
+	errorCh          chan error
 	broadcastChannel chan []byte
 	upgrader         websocket.Upgrader
 	cacheClient      *RedisClient
@@ -29,9 +29,9 @@ func NewServer() *Server {
 	return &Server{
 		messages:         []string{},
 		clients:          make(map[int]*Client),
-		addClientChan:    make(chan *Client),
-		removeClientChan: make(chan *Client),
-		errorChan:        make(chan error),
+		addClientCh:      make(chan *Client),
+		removeClientCh:   make(chan *Client),
+		errorCh:          make(chan error),
 		broadcastChannel: make(chan []byte),
 		cacheClient:      NewRedisClient(),
 
@@ -43,15 +43,19 @@ func NewServer() *Server {
 }
 
 func (s *Server) AddClient(client *Client) {
-	s.addClientChan <- client
+	s.addClientCh <- client
 }
 
 func (s *Server) RemoveClient(client *Client) {
-	s.removeClientChan <- client
+	s.removeClientCh <- client
 }
 
 func (s *Server) BroadcastMessage(message []byte) {
 	s.broadcastChannel <- message
+}
+
+func (s *Server) LogError(err error) {
+	s.errorCh <- err
 }
 
 func (s *Server) OnConnect(w http.ResponseWriter, r *http.Request) {
@@ -69,24 +73,24 @@ func (s *Server) OnConnect(w http.ResponseWriter, r *http.Request) {
 	s.RemoveClient(client)
 
 	if err := conn.Close(); err != nil {
-		s.errorChan <- err
+		s.errorCh <- err
 	}
 }
 
 func (s *Server) Listen() {
 	for {
 		select {
-		case client := <-s.addClientChan:
+		case client := <-s.addClientCh:
 			s.addClient(client)
 			s.sendAllCachedMessages(client, "defaultChannel")
 
-		case client := <-s.removeClientChan:
+		case client := <-s.removeClientCh:
 			s.removeClient(client)
 
 		case msg := <-s.broadcastChannel:
 			s.broadcastMessage(msg)
 
-		case err := <-s.errorChan:
+		case err := <-s.errorCh:
 			log.Println("server error channel:", err.Error())
 		}
 	}
