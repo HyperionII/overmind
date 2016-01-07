@@ -84,8 +84,7 @@ func (c *Client) onWrite() {
 		select {
 		case msg, ok := <-c.msgCh:
 			if !ok {
-				c.write(websocket.CloseMessage, []byte{})
-				return
+
 			}
 
 			err := c.write(websocket.TextMessage, []byte(msg))
@@ -103,6 +102,7 @@ func (c *Client) onWrite() {
 				return
 			}
 		case <-c.closeCh:
+			c.write(websocket.CloseMessage, []byte{})
 			c.closeCh <- true // Close onRead goroutine.
 			return
 		}
