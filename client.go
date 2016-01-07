@@ -62,6 +62,7 @@ func (c *Client) Listen() {
 func (c *Client) Write(msg []byte) {
 	select {
 	case c.msgCh <- msg:
+
 	case <-time.After(writeWait):
 		c.closeCh <- true
 	}
@@ -75,7 +76,6 @@ func (c *Client) write(messageType int, msg []byte) error {
 func (c *Client) onWrite() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
-		log.Println("Closing client", c.Id, "")
 		ticker.Stop()
 		c.conn.Close()
 	}()
