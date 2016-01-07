@@ -49,8 +49,18 @@ func NewClient(conn *websocket.Conn, server *Server) *Client {
 	}
 }
 
-func (c *Client) Close() {
-	close(c.msgCh)
+func (c *Client) CloseAndWait() {
+	c.closeCh <- true
+}
+
+func (c *Client) CloseOrIgnore() {
+	select {
+	case c.closeCh <- true:
+		// Close signal sent successfully.
+	default:
+		// If close signal can't be sent, it means there's already
+		// one signal in queue already. Ignore send.
+	}
 }
 
 func (c *Client) Listen() {
@@ -67,13 +77,7 @@ func (c *Client) Write(msg []byte) bool {
 	case <-time.After(writeWait):
 		// If client queue is full and timed out, then send a close channel
 		// signal.
-		select {
-		case c.closeCh <- true:
-			// Close signal sent successfully.
-		default:
-			// If close signal can't be sent, it means there's already
-			// one signal in queue already. Ignore send.
-		}
+		c.CloseOrIgnore()
 
 		return false
 	}
@@ -102,9 +106,10 @@ func (c *Client) onWrite() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
+		c.conn.Close()
 
 		// End onRead() goroutine.
-		c.closeCh <- true
+		c.CloseOrIgnore()
 	}()
 
 	for {
@@ -135,8 +140,10 @@ func (c *Client) onWrite() {
 
 func (c *Client) onRead() {
 	defer func() {
+		c.conn.Close()
+
 		// End onWrite() goroutine.
-		c.closeCh <- true
+		c.CloseOrIgnore()
 	}()
 
 	c.conn.SetReadLimit(maxMessageSize)
