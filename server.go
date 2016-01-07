@@ -62,7 +62,7 @@ func (s *Server) OnConnect(w http.ResponseWriter, r *http.Request) {
 	conn, err := s.upgrader.Upgrade(w, r, nil)
 
 	if err != nil {
-		log.Println(err)
+		s.LogError(err)
 		return
 	}
 
@@ -71,10 +71,6 @@ func (s *Server) OnConnect(w http.ResponseWriter, r *http.Request) {
 	s.AddClient(client)
 	client.Listen()
 	s.RemoveClient(client)
-
-	if err := conn.Close(); err != nil {
-		s.errorCh <- err
-	}
 }
 
 func (s *Server) Listen() {
