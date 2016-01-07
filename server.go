@@ -66,6 +66,7 @@ func (s *Server) OnConnect(w http.ResponseWriter, r *http.Request) {
 
 	s.AddClient(client)
 	client.Listen()
+	s.RemoveClient(client)
 
 	if err := conn.Close(); err != nil {
 		log.Println(err)

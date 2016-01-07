@@ -82,7 +82,9 @@ func (c *Client) onWrite() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
-		c.conn.Close()
+
+		// End onRead() goroutine.
+		c.closeCh <- true
 	}()
 
 	for {
@@ -102,9 +104,9 @@ func (c *Client) onWrite() {
 				c.server.errorChan <- fmt.Errorf("client[%d] ping timeout: %s", c.Id, err.Error())
 				return
 			}
+
 		case <-c.closeCh:
 			c.write(websocket.CloseMessage, []byte{})
-			c.closeCh <- true // End onRead() goroutine.
 			return
 		}
 	}
@@ -112,8 +114,8 @@ func (c *Client) onWrite() {
 
 func (c *Client) onRead() {
 	defer func() {
-		c.server.removeClient(c)
-		c.conn.Close()
+		// End onWrite() goroutine.
+		c.closeCh <- true
 	}()
 
 	c.conn.SetReadLimit(maxMessageSize)
@@ -126,8 +128,8 @@ func (c *Client) onRead() {
 	for {
 		select {
 		case <-c.closeCh:
-			c.closeCh <- true // End onWrite() goroutine.
 			return
+
 		default:
 			_, message, err := c.conn.ReadMessage()
 
