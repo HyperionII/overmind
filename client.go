@@ -56,7 +56,7 @@ func (c *Client) CloseAndWait() {
 	c.closeCh <- true
 }
 
-// CloseAndWait sends a signal to the close channel to terminate the
+// CloseOrIgnore sends a signal to the close channel to terminate the
 // Read() and Write() client's goroutines. It attempts to send the signal
 // to the channel or ignore it right away if it can't go through.
 func (c *Client) CloseOrIgnore() {
