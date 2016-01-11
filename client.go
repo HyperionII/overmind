@@ -69,6 +69,8 @@ func (c *Client) CloseOrIgnore() {
 	}
 }
 
+// Listen will spawn a new goroutine to write to the client and will make a
+// call to onRead() for when the client sends in data.
 func (c *Client) Listen() {
 	go c.onWrite()
 	c.onRead()
