@@ -8,14 +8,14 @@ import (
 )
 
 type Server struct {
-	messages         []string
-	clients          map[int]*Client
-	addClientCh      chan *Client
-	removeClientCh   chan *Client
-	errorCh          chan error
-	broadcastChannel chan []byte
-	upgrader         websocket.Upgrader
-	cacheClient      *RedisClient
+	messages       []string
+	clients        map[int]*Client
+	addClientCh    chan *Client
+	removeClientCh chan *Client
+	errorCh        chan error
+	broadcastCh    chan []byte
+	upgrader       websocket.Upgrader
+	cacheClient    *RedisClient
 }
 
 func NewServer() *Server {
@@ -27,13 +27,13 @@ func NewServer() *Server {
 	}
 
 	return &Server{
-		messages:         []string{},
-		clients:          make(map[int]*Client),
-		addClientCh:      make(chan *Client),
-		removeClientCh:   make(chan *Client),
-		errorCh:          make(chan error),
-		broadcastChannel: make(chan []byte),
-		cacheClient:      NewRedisClient(),
+		messages:       []string{},
+		clients:        make(map[int]*Client),
+		addClientCh:    make(chan *Client),
+		removeClientCh: make(chan *Client),
+		errorCh:        make(chan error),
+		broadcastCh:    make(chan []byte),
+		cacheClient:    NewRedisClient(),
 
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
@@ -51,7 +51,7 @@ func (s *Server) RemoveClient(client *Client) {
 }
 
 func (s *Server) BroadcastMessage(message []byte) {
-	s.broadcastChannel <- message
+	s.broadcastCh <- message
 }
 
 func (s *Server) LogError(err error) {
@@ -83,7 +83,7 @@ func (s *Server) Listen() {
 		case client := <-s.removeClientCh:
 			s.removeClient(client)
 
-		case msg := <-s.broadcastChannel:
+		case msg := <-s.broadcastCh:
 			s.broadcastMessage(msg)
 
 		case err := <-s.errorCh:
