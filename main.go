@@ -6,6 +6,10 @@ import (
 	"text/template"
 )
 
+const (
+	port = "2222"
+)
+
 var homeTemplate = template.Must(template.ParseFiles("static/index.html"))
 
 func serveHome(w http.ResponseWriter, r *http.Request) {
@@ -24,7 +28,7 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	log.Println("Starting server at port 2222...")
+	log.Printf("Starting server at port %s...\n", port)
 
 	s := NewServer()
 
@@ -33,7 +37,7 @@ func main() {
 
 	log.Println("Listening...")
 	go s.Listen()
-	err := http.ListenAndServe(":2222", nil)
+	err := http.ListenAndServe(":"+port, nil)
 
 	if err != nil {
 		log.Fatalln("main: listen and serve:", err)
