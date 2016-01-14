@@ -76,6 +76,8 @@ func (c *Client) Listen() {
 	c.onRead()
 }
 
+// Write sends the message parameter to the client's channel. If it takes
+// too long to respond, we disconnect the client.
 func (c *Client) Write(msg []byte) bool {
 	select {
 	case c.msgCh <- msg:
@@ -91,6 +93,9 @@ func (c *Client) Write(msg []byte) bool {
 	}
 }
 
+// WriteMany takes an array of strings and calls the Write() function
+// to send each message in sequence to the client's channel. If one of them
+// fails, we return.
 func (c *Client) WriteMany(msgs []string) bool {
 	var ok bool
 
