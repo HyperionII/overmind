@@ -34,7 +34,7 @@
 			});
 
 			if (window.WebSocket) {
-				conn = new WebSocket("ws://localhost:2222/echo");
+				conn = new WebSocket("ws://localhost:2222/ws");
 				var id = 1;
 
 				conn.onclose = function(evt) {
