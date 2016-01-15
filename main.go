@@ -33,7 +33,7 @@ func main() {
 	s := NewServer()
 
 	http.HandleFunc("/", serveHome)
-	http.HandleFunc("/echo", s.OnConnect)
+	http.HandleFunc("/ws", s.OnConnect)
 
 	log.Println("Listening...")
 	go s.Listen()
