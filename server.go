@@ -19,13 +19,6 @@ type Server struct {
 }
 
 func NewServer() *Server {
-	cacheClient := NewRedisClient()
-
-	if err := cacheClient.Ping(); err != nil {
-		log.Fatalln("could not ping cache database:", err)
-		return nil
-	}
-
 	return &Server{
 		messages:       []string{},
 		clients:        make(map[int]*Client),
@@ -33,7 +26,6 @@ func NewServer() *Server {
 		removeClientCh: make(chan *Client),
 		errorCh:        make(chan error),
 		broadcastCh:    make(chan []byte),
-		cacheClient:    NewRedisClient(),
 
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
@@ -78,7 +70,6 @@ func (s *Server) Listen() {
 		select {
 		case client := <-s.addClientCh:
 			s.addClient(client)
-			s.sendAllCachedMessages(client, "defaultChannel")
 
 		case client := <-s.removeClientCh:
 			s.removeClient(client)
@@ -110,8 +101,6 @@ func (s *Server) broadcastMessage(message []byte) {
 	for _, client := range s.clients {
 		go client.Write(message)
 	}
-
-	s.cacheClient.SaveMessage("defaultChannel", string(message))
 }
 
 func (s *Server) sendAllCachedMessages(client *Client, channel string) {
