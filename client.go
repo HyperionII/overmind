@@ -110,11 +110,17 @@ func (c *Client) WriteMany(msgs []string) bool {
 	return true
 }
 
+// write is a wrapper around gorilla's Connection.WriteMessage function
+// that sets a write deadline to timeout a write call and the actual
+// WriteMessage call to send the message.
 func (c *Client) write(messageType int, msg []byte) error {
 	c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 	return c.conn.WriteMessage(messageType, msg)
 }
 
+// onWrite function writes to the client all messages. Messages include server
+// custom messages, ping messages and close connection messages. Must be run
+// on a different goroutine from onRead().
 func (c *Client) onWrite() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
@@ -151,6 +157,9 @@ func (c *Client) onWrite() {
 	}
 }
 
+// onRead function reads all messages from client and makes sure to send them
+// to the server. Client messages include the pong messages and custom client
+// messages. Must be run on a different goroutine frmo onWrite().
 func (c *Client) onRead() {
 	defer func() {
 		c.conn.Close()
