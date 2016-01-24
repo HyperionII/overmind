@@ -25,7 +25,7 @@ func NewServer() *Server {
 		addClientCh:    make(chan *Client),
 		removeClientCh: make(chan *Client),
 		errorCh:        make(chan error),
-		broadcastCh:    make(chan []byte),
+		broadcastCh:    make(chan []byte, 64),
 
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
