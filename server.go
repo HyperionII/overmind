@@ -65,6 +65,8 @@ func (s *Server) OnConnect(w http.ResponseWriter, r *http.Request) {
 	s.RemoveClient(client)
 }
 
+// Listen is the main server loop. This function awaits for incoming messages
+// from all channels.
 func (s *Server) Listen() {
 	for {
 		select {
