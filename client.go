@@ -65,7 +65,7 @@ func (c *Client) CloseOrIgnore() {
 		// Close signal sent successfully.
 	default:
 		// If close signal can't be sent, it means there's already
-		// one signal in queue already. Ignore send.
+		// one signal in queue. Ignore send.
 	}
 }
 
