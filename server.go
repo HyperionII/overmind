@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// Server contains all information to host the websocket server.
 type Server struct {
 	messages       []string
 	clients        map[int]*Client
@@ -18,6 +19,7 @@ type Server struct {
 	cacheClient    *RedisClient
 }
 
+// NewServer initializes a new Client struct.
 func NewServer() *Server {
 	return &Server{
 		messages:       []string{},
@@ -34,22 +36,33 @@ func NewServer() *Server {
 	}
 }
 
+// AddClient adds a new client to the server's client list. AddClient is a
+// blocking function.
 func (s *Server) AddClient(client *Client) {
 	s.addClientCh <- client
 }
 
+// RemoveClient removes an existing client from the server's client list.
+// RemoveClient is a blocking function.
 func (s *Server) RemoveClient(client *Client) {
 	s.removeClientCh <- client
 }
 
+// BroadcastMessage is used to send all client's a message. BroadcastMessage is
+// a blocking function.
 func (s *Server) BroadcastMessage(message []byte) {
 	s.broadcastCh <- message
 }
 
+// LogError lets other goroutines to log errors though the server. In the
+// future, error processing might be done in this function so it is better
+// to call this function when an error happened. This function is a blocking
+// function.
 func (s *Server) LogError(err error) {
 	s.errorCh <- err
 }
 
+// OnConnect 'upgrades' a normal HTTP request to a websocket connection.
 func (s *Server) OnConnect(w http.ResponseWriter, r *http.Request) {
 	conn, err := s.upgrader.Upgrade(w, r, nil)
 
