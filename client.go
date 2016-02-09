@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	maxClientId = 0
+	maxClientID = 0
 )
 
 const (
@@ -26,8 +26,9 @@ const (
 	maxMessageSize = 512
 )
 
+// Client contains all information associated with a websocket client conn.
 type Client struct {
-	Id   int
+	ID   int
 	Name string
 
 	conn    *websocket.Conn
@@ -36,12 +37,13 @@ type Client struct {
 	closeCh chan bool
 }
 
+// NewClient initializes a new Client struct.
 func NewClient(conn *websocket.Conn, server *Server) *Client {
-	maxClientId++
+	maxClientID++
 
 	return &Client{
-		Id:      maxClientId,
-		Name:    "Client" + strconv.Itoa(maxClientId),
+		Id:      maxClientID,
+		Name:    "Client" + strconv.Itoa(maxClientID),
 		conn:    conn,
 		server:  server,
 		msgCh:   make(chan []byte, 256),
