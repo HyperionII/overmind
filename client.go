@@ -42,7 +42,7 @@ func NewClient(conn *websocket.Conn, server *Server) *Client {
 	maxClientID++
 
 	return &Client{
-		Id:      maxClientID,
+		ID:      maxClientID,
 		Name:    "Client" + strconv.Itoa(maxClientID),
 		conn:    conn,
 		server:  server,
@@ -147,7 +147,7 @@ func (c *Client) onWrite() {
 			err := c.write(websocket.PingMessage, []byte{})
 
 			if err != nil {
-				err = fmt.Errorf("client[%d] ping timeout: %s", c.Id, err.Error())
+				err = fmt.Errorf("client[%d] ping timeout: %s", c.ID, err.Error())
 				c.server.LogError(err)
 				return
 			}
