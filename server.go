@@ -99,14 +99,14 @@ func (s *Server) Listen() {
 }
 
 func (s *Server) addClient(client *Client) {
-	s.clients[client.Id] = client
+	s.clients[client.ID] = client
 
 	log.Println(client.Name, "has joined the channel!")
 	log.Println("Currently", len(s.clients), "clients connected!")
 }
 
 func (s *Server) removeClient(client *Client) {
-	delete(s.clients, client.Id)
+	delete(s.clients, client.ID)
 
 	log.Println(client.Name, "has left the channel!")
 	log.Println("Currently", len(s.clients), "clients connected!")
