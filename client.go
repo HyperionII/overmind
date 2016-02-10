@@ -78,9 +78,26 @@ func (c *Client) Listen() {
 	c.onRead()
 }
 
-// Write sends the message parameter to the client's channel. If it takes
-// too long to respond, we disconnect the client.
-func (c *Client) Write(msg []byte) bool {
+// Write attempts to send a message to the client. If the client
+// channel's buffer is full, then we spawn a new goroutine with a call
+// to client.writeAndWait which will wait waitTime duration. This is done in
+// order to prevent blocking the caller for too long.
+func (c *Client) Write(msg []byte) {
+	select {
+	case c.msgCh <- msg:
+		// Message sent.
+
+	default:
+		// Client's queue is full, so spawn a new goroutine to avoid
+		// blocking the caller for long.
+		go c.writeAndWait(msg)
+
+	}
+}
+
+// writeAndWait attempts to send the message to the client's channel. If it
+// takes too long to respond, we disconnect the client.
+func (c *Client) writeAndWait(msg []byte) bool {
 	select {
 	case c.msgCh <- msg:
 		// Message successfully sent.
@@ -102,7 +119,7 @@ func (c *Client) WriteMany(msgs []string) bool {
 	var ok bool
 
 	for _, msg := range msgs {
-		ok = c.Write([]byte(msg))
+		ok = c.writeAndWait([]byte(msg))
 
 		if !ok {
 			return false

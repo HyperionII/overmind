@@ -114,7 +114,7 @@ func (s *Server) removeClient(client *Client) {
 
 func (s *Server) broadcastMessage(message []byte) {
 	for _, client := range s.clients {
-		go client.Write(message)
+		client.Write(message)
 	}
 }
 
