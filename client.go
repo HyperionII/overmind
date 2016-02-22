@@ -24,6 +24,9 @@ const (
 
 	// Maximum message size allowed from peer.
 	maxMessageSize = 512
+
+	// Client's buffered channel size.
+	messageChannelSize = 32
 )
 
 // Client contains all information associated with a websocket client conn.
@@ -46,7 +49,7 @@ func NewClient(conn *websocket.Conn, server *Server) *Client {
 		Name:    "Client" + strconv.Itoa(maxClientID),
 		conn:    conn,
 		server:  server,
-		msgCh:   make(chan []byte, 256),
+		msgCh:   make(chan []byte, messageChannelSize),
 		closeCh: make(chan bool, 1),
 	}
 }
