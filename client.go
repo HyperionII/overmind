@@ -22,7 +22,7 @@ const (
 	maxMessageSize = 512
 
 	// Client's buffered channel size.
-	messageChannelSize = 32
+	messageChannelSize = 16
 )
 
 // Client contains all information associated with a websocket client conn.
