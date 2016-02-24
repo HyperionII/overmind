@@ -8,10 +8,6 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var (
-	maxClientID = 0
-)
-
 const (
 	// Time allowed to write a message to the peer.
 	writeWait = 10 * time.Second
@@ -42,11 +38,9 @@ type Client struct {
 
 // NewClient initializes a new Client struct.
 func NewClient(conn *websocket.Conn, server *Server) *Client {
-	maxClientID++
-
 	return &Client{
 		ID:      maxClientID,
-		Name:    "Client" + strconv.Itoa(maxClientID),
+		Name:    "Client",
 		conn:    conn,
 		server:  server,
 		msgCh:   make(chan []byte, messageChannelSize),
