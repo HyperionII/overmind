@@ -37,7 +37,7 @@ type Client struct {
 }
 
 // NewClient initializes a new Client struct.
-func NewClient(conn *websocket.Conn, server *Server, name string) *Client {
+func NewClient(name string, conn *websocket.Conn, server *Server) *Client {
 	return &Client{
 		ID:      maxClientID,
 		Name:    name,
