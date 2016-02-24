@@ -71,7 +71,7 @@ func (s *Server) OnConnect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := NewClient(conn, s)
+	client := NewClient("Client Name", conn, s)
 
 	s.AddClient(client)
 	client.Listen()
