@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -132,6 +133,27 @@ func (c *Client) WriteMany(msgs []string) bool {
 	}
 
 	return true
+}
+
+// ReadAndSetClientName awaits for the user to input his name and then sets it
+// to the current client instance.
+func (c *Client) ReadAndSetClientName() error {
+	var credentials struct {
+		Name string `json:"name"`
+	}
+
+	err := c.conn.ReadJSON(credentials)
+
+	if err != nil {
+		return err
+	} else if credentials.Name == "" {
+		return errors.New("read and set client name: empty name received")
+	}
+
+	c.Name = credentials.Name
+	c.conn.SetReadDeadline(time.Now().Add(pongWait))
+
+	return nil
 }
 
 // write is a wrapper around gorilla's Connection.WriteMessage function
