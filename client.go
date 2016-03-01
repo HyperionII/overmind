@@ -8,6 +8,11 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+var (
+	// Client Id
+	clientID = 0
+)
+
 const (
 	// Time allowed to write a message to the peer.
 	writeWait = 10 * time.Second
@@ -27,6 +32,7 @@ const (
 
 // Client contains all information associated with a websocket client conn.
 type Client struct {
+	ID   int
 	Name string
 
 	conn    *websocket.Conn
@@ -38,6 +44,8 @@ type Client struct {
 // NewClient initializes a new Client struct, sets the default read limits and
 // deadlines and creates a Pong Handler for the connection.
 func NewClient(conn *websocket.Conn, server *Server) *Client {
+	clientID++
+
 	conn.SetReadLimit(maxMessageSize)
 	conn.SetReadDeadline(time.Now().Add(pongWait))
 	conn.SetPongHandler(func(string) error {
@@ -46,6 +54,7 @@ func NewClient(conn *websocket.Conn, server *Server) *Client {
 	})
 
 	return &Client{
+		ID:      clientID,
 		conn:    conn,
 		server:  server,
 		msgCh:   make(chan []byte, messageChannelSize),
