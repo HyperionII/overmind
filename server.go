@@ -76,6 +76,7 @@ func (s *Server) OnConnect(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		s.LogError(err)
+		conn.Close()
 		return
 	}
 
