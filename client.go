@@ -36,8 +36,16 @@ type Client struct {
 	closeCh chan bool
 }
 
-// NewClient initializes a new Client struct.
+// NewClient initializes a new Client struct, sets the default read limits and
+// deadlines and creates a Pong Handler for the connection.
 func NewClient(name string, conn *websocket.Conn, server *Server) *Client {
+	conn.SetReadLimit(maxMessageSize)
+	conn.SetReadDeadline(time.Now().Add(pongWait))
+	conn.SetPongHandler(func(string) error {
+		conn.SetReadDeadline(time.Now().Add(pongWait))
+		return nil
+	})
+
 	return &Client{
 		ID:      maxClientID,
 		Name:    name,
@@ -183,13 +191,6 @@ func (c *Client) onRead() {
 		// End onWrite() goroutine.
 		c.CloseOrIgnore()
 	}()
-
-	c.conn.SetReadLimit(maxMessageSize)
-	c.conn.SetReadDeadline(time.Now().Add(pongWait))
-	c.conn.SetPongHandler(func(string) error {
-		c.conn.SetReadDeadline(time.Now().Add(pongWait))
-		return nil
-	})
 
 	for {
 		select {
