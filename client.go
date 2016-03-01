@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/gorilla/websocket"
