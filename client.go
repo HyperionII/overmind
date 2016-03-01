@@ -147,7 +147,7 @@ func (c *Client) ReadAndSetClientName() error {
 		Name string `json:"name"`
 	}
 
-	err := c.conn.ReadJSON(credentials)
+	err := c.conn.ReadJSON(&credentials)
 
 	if err != nil {
 		return err
