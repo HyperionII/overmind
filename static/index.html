@@ -37,6 +37,12 @@
 				conn = new WebSocket("ws://localhost:2222/ws");
 				var id = 1;
 
+				conn.onopen = function(event) {
+					conn.send({
+						name: "Admin"
+					});
+				};
+
 				conn.onclose = function(evt) {
 					appendLog($("<div><b>Connection closed.</b></div>"));
 				};
