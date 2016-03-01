@@ -39,7 +39,7 @@ type Client struct {
 
 // NewClient initializes a new Client struct, sets the default read limits and
 // deadlines and creates a Pong Handler for the connection.
-func NewClient(name string, conn *websocket.Conn, server *Server) *Client {
+func NewClient(conn *websocket.Conn, server *Server) *Client {
 	conn.SetReadLimit(maxMessageSize)
 	conn.SetReadDeadline(time.Now().Add(pongWait))
 	conn.SetPongHandler(func(string) error {
@@ -49,7 +49,6 @@ func NewClient(name string, conn *websocket.Conn, server *Server) *Client {
 
 	return &Client{
 		ID:      maxClientID,
-		Name:    name,
 		conn:    conn,
 		server:  server,
 		msgCh:   make(chan []byte, messageChannelSize),
