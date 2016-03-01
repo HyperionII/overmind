@@ -27,7 +27,6 @@ const (
 
 // Client contains all information associated with a websocket client conn.
 type Client struct {
-	ID   int
 	Name string
 
 	conn    *websocket.Conn
@@ -47,7 +46,6 @@ func NewClient(conn *websocket.Conn, server *Server) *Client {
 	})
 
 	return &Client{
-		ID:      maxClientID,
 		conn:    conn,
 		server:  server,
 		msgCh:   make(chan []byte, messageChannelSize),
