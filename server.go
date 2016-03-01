@@ -72,7 +72,7 @@ func (s *Server) OnConnect(w http.ResponseWriter, r *http.Request) {
 	}
 
 	client := NewClient(conn, s)
-	err = c.ReadAndSetClientName()
+	err = client.ReadAndSetClientName()
 
 	if err != nil {
 		s.LogError(err)
