@@ -231,7 +231,7 @@ func (c *Client) onRead() {
 				return
 			}
 
-			c.server.BroadcastMessage(message)
+			c.server.BroadcastMessage(c, message)
 		}
 	}
 }
