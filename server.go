@@ -66,10 +66,10 @@ func (s *Server) LogError(err error) {
 // OnConnect 'upgrades' a normal HTTP request to a websocket connection.
 func (s *Server) OnConnect(w http.ResponseWriter, r *http.Request) {
 	conn, err := s.upgrader.Upgrade(w, r, nil)
-	defer conn.Close()
 
 	if err != nil {
 		s.LogError(err)
+		conn.Close()
 		return
 	}
 
@@ -78,6 +78,7 @@ func (s *Server) OnConnect(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		s.LogError(err)
+		conn.Close()
 		return
 	}
 
