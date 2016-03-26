@@ -51,7 +51,6 @@ func (s *Server) RemoveClient(client *Client) {
 // BroadcastMessage is used to send all client's a message. BroadcastMessage is
 // a blocking function.
 func (s *Server) BroadcastMessage(c *Client, message []byte) {
-	log.Printf("%s says: %s", c.Name, message)
 	s.broadcastCh <- message
 }
 
